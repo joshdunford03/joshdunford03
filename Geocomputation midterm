@@ -1,1 +1,1387 @@
+#Research Question - How Does Subway On Time Performance Vary by Route and Day Type From 2020 to 2024?
+#Data I used - 2020 to 2024 Subway OTP from MTA Open Data
+#Data Columns - Month (formatted like 20200101), Line (1234567ACEBDFMNRQWGL), Day Type (1 for weekday, 2 for weekend), Number of scheduled arrivals, number of actual arrivals, OTP)
+#MTA website defines OTP as the amount of lines that arrive at final stop within 5 minutes and 59 seconds of scheduled time.
+import pandas as pd
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+#These are the lines that use middle tracks and skip stops in Manhattan.
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+#These lines are local in Manhattan.
+shuttles = ['MS', 'BS', 'QS', 'FS', 'GS', 'H']
+#MS/GS are Manhattan Shuttle (I forgot to update all of them in the table), QS and H are Queens Shuttle, and FS and BS are Brooklyn Shuttle
+independentlines = ['7', 'L', 'G']
+#These lines are independent because they don't share tracks with other trains and also use modern signalling
+expressontimeperformance = ontimeperformance[ontimeperformance['line'].isin(expresslines)]
+localontimeperformance = ontimeperformance[ontimeperformance['line'].isin(locallines)]
+shuttleontimeperformance = ontimeperformance[ontimeperformance['line'].isin(shuttles)]
+print('Local lines:', locallines, 'Express lines: ', expresslines, 'Shuttles: ', shuttles, 'day types: 1 for weekday, 2 for weekend')
+Local lines: ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F', 'JZ'] Express lines:  ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N'] Shuttles:  ['MS', 'BS', 'QS', 'FS', 'GS', 'H'] day types: 1 for weekday, 2 for weekend
+import pandas as pd
+import numpy as np
+import matplotlib 
+import matplotlib.pyplot as plt
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+monthlyaverage= ontimeperformance.groupby(['month'])['terminal_on_time_performance'].mean().reset_index()
+
+monthlyaverage.plot.line(x = 'month', y = 'terminal_on_time_performance', title = 'Average On Time Performance from 2020 to 2024')
+
+plt.xticks(rotation = 30, horizontalalignment = 'center') 
+plt.xlabel('month')
+plt.ylabel('OTP')
+Text(0, 0.5, 'OTP')
+No description has been provided for this image
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+ontimeperformance['month'] = pd.to_datetime(df['month'].astype(str), format='mixed')
+
+fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(20, 15))
+axes_list = axes.flatten()
+
+for j in range(len(box_configs), len(axes_list)):
+    axes_list[j].axis('off')
+
+for i, config in enumerate(box_configs):
+    
+    data = ontimeperformance[ontimeperformance['line'].isin(config['lines'])].groupby('month')['terminal_on_time_performance'].mean()
+    
+
+    axes_list[i].plot(data.index, data.values, color=config['color'], linewidth=3)
+    
+    axes_list[i].set_title(config['title'], fontsize=16, fontweight='bold', pad=15)
+    
+    axes_list[i].set_ylim(55, 100) 
+    axes_list[i].grid(True, alpha=0.3)
+    
+
+    axes_list[i].xaxis.set_major_locator(mdates.YearLocator())
+    axes_list[i].xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+    plt.setp(axes_list[i].get_xticklabels(), rotation=0, fontsize=12)
+
+    if 'Shuttles' in config['title']:
+        axes_list[i].set_ylim(85, 102) 
+    else:
+        axes_list[i].set_ylim(55, 100)
+
+
+for j in range(len(box_configs), len(axes_list)):
+    axes_list[j].axis('off')
+
+box_configs = [
+    {'title': 'Broadway 7th Avenue Lines (1, 2, 3)', 'lines': ['1', '2', '3'], 'color': 'red'},
+    {'title': 'Lexington Lines (4, 5, 6)', 'lines': ['4', '5', '6'], 'color': 'green'},
+    {'title': 'Eighth Avenue Lines (A, C, E)', 'lines': ['A', 'C', 'E'], 'color': 'blue'},
+    {'title': 'Sixth Avenue Lines (B, D, F, M)', 'lines': ['B', 'D', 'F', 'M'], 'color': 'orange'},
+    {'title': 'Broadway Lines (N, R, Q, W)', 'lines': ['N', 'R', 'Q', 'W'], 'color':'yellow'},
+    {'title': 'Shuttles (Franklin Avenue, Rockaway, 42nd Street)', 'lines': ['MS', 'QS', 'BS', 'FS', 'GS'], 'color':'grey'},
+    {'title': 'Independent lines (L, 7, G)', 'lines':['L', '7', 'G'], 'color': 'purple'}
+]
+
+
+plt.suptitle('MTA Subway Performance by Line Group (2020-2024)', fontsize=18, y=0.98)
+plt.tight_layout()
+plt.show()
+No description has been provided for this image
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+adivisionlines =['2', '3', '4', '5']
+bdivisionlines = ['A', 'B','D', 'E', 'N', 'Q']
+
+adivisionexpressweekdayontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']<=75)
+]
+
+adivisionexpressweekendontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+   (ontimeperformance['terminal_on_time_performance']<=75)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']<=75)
+]
+
+bdivisionexpressweekendontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']<=75)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlinesbelowseventyfive = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlinesbelowseventyfive = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlinesbelowseventyfive = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlinesbelowseventyfive = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+bestperformingweekendAlinesbelowseventyfive = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlinesbelowseventyfive = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlinesbelowseventyfive = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlinesbelowseventyfive = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlinesbelowseventyfive)
+print(worstperformingweekdayAlinesbelowseventyfive)
+print(bestperformingweekdayBlinesbelowseventyfive)
+print(worstperformingweekdayBlinesbelowseventyfive)
+print (bestperformingweekendAlinesbelowseventyfive)
+print (worstperformingweekendAlinesbelowseventyfive)
+print (bestperformingweekendBlinesbelowseventyfive)
+print (worstperformingweekendBlinesbelowseventyfive)
+      month  day_type line  terminal_on_time_performance
+0  20240701         1    2                     74.934655
+1  20220201         1    2                     74.865960
+2  20211201         1    2                     74.286930
+3  20221101         1    2                     74.014940
+4  20210201         1    2                     73.912334
+      month  day_type line  terminal_on_time_performance
+0  20240101         1    2                     69.905144
+1  20231201         1    2                     69.596670
+2  20231001         1    2                     68.564254
+3  20220901         1    2                     68.094470
+4  20241201         1    2                     67.071605
+      month  day_type line  terminal_on_time_performance
+0  20230701         1    E                     74.975610
+1  20230301         1    E                     74.968140
+2  20210701         1    Q                     74.967350
+3  20230601         1    A                     74.948615
+4  20240501         1    A                     74.912345
+      month  day_type line  terminal_on_time_performance
+0  20221101         1    B                     59.870064
+1  20241201         1    B                     59.759960
+2  20240801         1    B                     54.167557
+3  20240901         1    B                     52.848905
+4  20221001         1    B                     51.211673
+      month  day_type line  terminal_on_time_performance
+0  20210901         2    3                     74.831840
+1  20230501         2    4                     74.539363
+2  20200301         2    2                     74.469495
+3  20240801         2    3                     74.284110
+4  20220101         2    4                     74.232210
+      month  day_type line  terminal_on_time_performance
+0  20210401         2    2                     54.764706
+1  20220501         2    2                     53.445800
+2  20200401         2    2                     51.622134
+3  20210601         2    2                     49.285713
+4  20240201         2    2                     31.006650
+      month  day_type line  terminal_on_time_performance
+0  20240601         2    Q                     74.960816
+1  20240301         2    A                     74.955150
+2  20220701         2    Q                     74.930924
+3  20240301         2    D                     74.369746
+4  20200401         2    Q                     74.264705
+      month  day_type line  terminal_on_time_performance
+0  20220601         2    A                     54.768270
+1  20240701         2    A                     54.189724
+2  20220801         2    D                     53.179190
+3  20200401         2    N                     51.377120
+4  20220201         2    A                     50.643015
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+adivisionlines =['2', '3', '4', '5']
+bdivisionlines = ['A', 'B','D', 'E', 'N', 'Q']
+
+adivisionexpressweekdayontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+
+adivisionexpressweekendontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+
+bdivisionexpressweekendontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlinesseventyfivetoeighty = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlinesseventyfivetoeighty = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlinesseventyfivetoeighty = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlinesseventyfivetoeighty = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlinesseventyfivetoeighty = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlinesseventyfivetoeighty = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlinesseventyfivetoeighty = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlinesseventyfivetoeighty = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlinesseventyfivetoeighty)
+print(worstperformingweekdayAlinesseventyfivetoeighty)
+print(bestperformingweekdayBlinesseventyfivetoeighty)
+print(worstperformingweekdayBlinesseventyfivetoeighty)
+print (bestperformingweekendAlinesseventyfivetoeighty)
+print (worstperformingweekendAlinesseventyfivetoeighty)
+print (bestperformingweekendBlinesseventyfivetoeighty)
+print (worstperformingweekendBlinesseventyfivetoeighty)
+      month  day_type line  terminal_on_time_performance
+0  20210301         1    2                     79.954034
+1  20240301         1    4                     79.912436
+2  20230901         1    4                     79.840450
+3  20240901         1    5                     79.578480
+4  20230101         1    2                     79.503745
+      month  day_type line  terminal_on_time_performance
+0  20220901         1    5                     75.954926
+1  20230301         1    2                     75.613660
+2  20221001         1    5                     75.581910
+3  20230501         1    2                     75.187550
+4  20241001         1    2                     75.103790
+      month  day_type line  terminal_on_time_performance
+0  20240701         1    Q                     79.975800
+1  20241101         1    N                     79.709990
+2  20201201         1    N                     79.392296
+3  20240801         1    E                     79.379160
+4  20241201         1    A                     79.223573
+      month  day_type line  terminal_on_time_performance
+0  20240601         1    A                     75.056780
+1  20210801         1    B                     75.046384
+2  20210601         1    A                     75.044084
+3  20220801         1    D                     75.019990
+4  20240401         1    E                     75.013906
+      month  day_type line  terminal_on_time_performance
+0  20201201         2    4                     79.941374
+1  20210901         2    5                     79.835950
+2  20211201         2    5                     79.790276
+3  20240601         2    4                     79.700375
+4  20240101         2    4                     79.694710
+      month  day_type line  terminal_on_time_performance
+0  20241101         2    4                     75.481087
+1  20221201         2    4                     75.393260
+2  20220401         2    4                     75.137174
+3  20201101         2    3                     75.133820
+4  20241101         2    5                     75.055385
+      month  day_type line  terminal_on_time_performance
+0  20201001         2    E                     79.979360
+1  20241001         2    N                     79.960316
+2  20230801         2    E                     79.761904
+3  20240901         2    A                     79.586565
+4  20241101         2    N                     79.576270
+      month  day_type line  terminal_on_time_performance
+0  20240401         2    D                     75.260717
+1  20220601         2    E                     75.237530
+2  20231001         2    N                     75.228100
+3  20230301         2    A                     75.061830
+4  20210801         2    Q                     75.020957
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+adivisionlines =['2', '3', '4', '5']
+bdivisionlines = ['A', 'B','D', 'E', 'N', 'Q']
+
+adivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+
+adivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+
+bdivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlineseightytoeightyfive)
+print(worstperformingweekdayAlineseightytoeightyfive)
+print(bestperformingweekdayBlineseightytoeightyfive)
+print(worstperformingweekdayBlineseightytoeightyfive)
+print (bestperformingweekendAlineseightytoeightyfive)
+print (worstperformingweekendAlineseightytoeightyfive)
+print (bestperformingweekendBlineseightytoeightyfive)
+print (worstperformingweekendBlineseightytoeightyfive)
+      month  day_type line  terminal_on_time_performance
+0  20210801         1    4                     84.965074
+1  20240801         1    3                     84.964350
+2  20210701         1    3                     84.942900
+3  20200701         1    2                     84.872407
+4  20210701         1    4                     84.818440
+      month  day_type line  terminal_on_time_performance
+0  20220201         1    5                     80.516356
+1  20210201         1    5                     80.285530
+2  20220301         1    2                     80.215450
+3  20231201         1    5                     80.151975
+4  20211201         1    4                     80.088663
+      month  day_type line  terminal_on_time_performance
+0  20200801         1    D                     84.984356
+1  20200101         1    Q                     84.717800
+2  20200901         1    B                     84.549880
+3  20200701         1    D                     84.455870
+4  20210301         1    N                     84.220570
+      month  day_type line  terminal_on_time_performance
+0  20200301         1    B                     80.306125
+1  20200201         1    Q                     80.235330
+2  20230201         1    Q                     80.217210
+3  20200201         1    E                     80.084750
+4  20230201         1    E                     80.041390
+      month  day_type line  terminal_on_time_performance
+0  20221101         2    3                     84.928230
+1  20200301         2    3                     84.917355
+2  20210501         2    5                     84.885580
+3  20240501         2    5                     84.809350
+4  20230501         2    5                     84.667570
+      month  day_type line  terminal_on_time_performance
+0  20210701         2    3                     80.485440
+1  20220801         2    4                     80.477530
+2  20201101         2    5                     80.354130
+3  20201101         2    4                     80.353355
+4  20201201         2    5                     80.330260
+      month  day_type line  terminal_on_time_performance
+0  20240901         2    Q                      84.91147
+1  20240401         2    E                      84.70847
+2  20201001         2    A                      84.50593
+3  20230201         2    E                      84.49367
+4  20240101         2    E                      84.47282
+      month  day_type line  terminal_on_time_performance
+0  20230701         2    N                     80.511665
+1  20210601         2    D                     80.497690
+2  20210701         2    N                     80.231480
+3  20210501         2    Q                     80.127347
+4  20240401         2    Q                     80.119280
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+adivisionlines =['2', '3', '4', '5']
+bdivisionlines = ['A', 'B','D', 'E', 'N', 'Q']
+
+adivisionexpressweekdayontimeperformance2020eightyfivetoninety = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+
+adivisionexpressweekendontimeperformance2020eightyfivetoninety = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020eightyfivetoninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020eightyfivetoninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020eightyfivetoninety = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+
+bdivisionexpressweekendontimeperformance2020eightyfivetoninety = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020eightyfivetoninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020eightyfivetoninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlineseightyfivetoninety = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlineseightyfivetoninety = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlineseightyfivetoninety = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlineseightyfivetoninety = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlineseightyfivetoninety = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlineseightyfivetoninety = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlineseightyfivetoninety = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlineseightyfivetoninety = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlineseightyfivetoninety)
+print(worstperformingweekdayAlineseightyfivetoninety)
+print(bestperformingweekdayBlineseightyfivetoninety)
+print(worstperformingweekdayBlineseightyfivetoninety)
+print (bestperformingweekendAlineseightyfivetoninety)
+print (worstperformingweekendAlineseightyfivetoninety)
+print (bestperformingweekendBlineseightyfivetoninety)
+print (worstperformingweekendBlineseightyfivetoninety)
+      month  day_type line  terminal_on_time_performance
+0  20201001         1    5                     89.869190
+1  20200501         1    5                     89.849980
+2  20230601         1    3                     89.706326
+3  20211101         1    3                     89.653546
+4  20200601         1    5                     89.586480
+      month  day_type line  terminal_on_time_performance
+0  20210501         1    2                     85.225170
+1  20241001         1    5                     85.102670
+2  20200101         1    5                     85.048410
+3  20220601         1    5                     85.023487
+4  20211201         1    3                     85.014254
+      month  day_type line  terminal_on_time_performance
+0  20200601         1    D                     89.718400
+1  20200601         1    A                     89.413637
+2  20200501         1    N                     89.375985
+3  20200901         1    Q                     89.214800
+4  20200401         1    E                     89.173790
+      month  day_type line  terminal_on_time_performance
+0  20200601         1    B                     85.444176
+1  20200901         1    E                     85.218720
+2  20200701         1    A                     85.139394
+3  20200301         1    E                     85.131620
+4  20210201         1    E                     85.065270
+      month  day_type line  terminal_on_time_performance
+0  20210201         2    5                     89.867370
+1  20230501         2    3                     89.786094
+2  20200501         2    3                     89.636165
+3  20230101         2    5                     89.143730
+4  20200601         2    3                     89.110430
+      month  day_type line  terminal_on_time_performance
+0  20220701         2    5                     85.637780
+1  20200901         2    4                     85.301507
+2  20210701         2    4                     85.248333
+3  20230801         2    5                     85.136503
+4  20200701         2    3                     85.017630
+      month  day_type line  terminal_on_time_performance
+0  20210601         2    E                     89.761907
+1  20231001         2    Q                     89.740770
+2  20200101         2    E                     89.702760
+3  20200201         2    Q                     89.396410
+4  20201101         2    Q                     89.218330
+      month  day_type line  terminal_on_time_performance
+0  20200901         2    D                     85.471900
+1  20200301         2    D                     85.426160
+2  20231201         2    Q                     85.338867
+3  20230401         2    Q                     85.291090
+4  20200901         2    E                     85.229650
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+adivisionlines =['2', '3', '4', '5']
+bdivisionlines = ['A', 'B','D', 'E', 'N', 'Q']
+
+adivisionexpressweekdayontimeperformance2020aboveninety = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+
+adivisionexpressweekendontimeperformance2020aboveninety = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020aboveninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020aboveninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020aboveninety = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+
+bdivisionexpressweekendontimeperformance2020aboveninety = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020aboveninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020aboveninety.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlinesaboveninety = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlinesaboveninety = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlinesaboveninety = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlinesaboveninety = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlinesaboveninety = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlinesaboveninety = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlinesaboveninety = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlinesaboveninety = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlinesaboveninety)
+print(worstperformingweekdayAlinesaboveninety)
+print(bestperformingweekdayBlinesaboveninety)
+print(worstperformingweekdayBlinesaboveninety)
+print (bestperformingweekendAlinesaboveninety)
+print (worstperformingweekendAlinesaboveninety)
+print (bestperformingweekendBlinesaboveninety)
+print (worstperformingweekendBlinesaboveninety)
+      month  day_type line  terminal_on_time_performance
+0  20200501         1    4                     94.324327
+1  20200501         1    3                     93.667130
+2  20200601         1    3                     93.473590
+3  20200401         1    4                     92.697203
+4  20200501         1    2                     92.546296
+      month  day_type line  terminal_on_time_performance
+0  20200401         1    5                     90.538100
+1  20201001         1    4                     90.495920
+2  20200601         1    2                     90.280896
+3  20201101         1    3                     90.189505
+4  20210501         1    3                     90.180665
+      month  day_type line  terminal_on_time_performance
+0  20200501         1    E                     96.875000
+1  20200501         1    Q                     95.984125
+2  20200601         1    E                     94.013330
+3  20200501         1    D                     93.960670
+4  20200501         1    A                     92.987060
+      month  day_type line  terminal_on_time_performance
+0  20200801         1    E                     91.660860
+1  20200701         1    E                     90.764970
+2  20210401         1    E                     90.509975
+3  20200401         1    D                     90.336937
+4  20210301         1    E                     90.313363
+      month  day_type line  terminal_on_time_performance
+0  20201001         2    5                     99.012834
+1  20220901         2    5                     96.780680
+2  20200601         2    5                     96.465296
+3  20230301         2    5                     95.218660
+4  20200501         2    5                     94.837310
+      month  day_type line  terminal_on_time_performance
+0  20230701         2    5                     90.528846
+1  20230101         2    3                     90.327240
+2  20200101         2    5                     90.260476
+3  20240301         2    5                     90.096986
+4  20230201         2    3                     90.093460
+      month  day_type line  terminal_on_time_performance
+0  20210301         2    E                     98.148150
+1  20200501         2    E                     96.440970
+2  20210101         2    E                     95.750594
+3  20200801         2    D                     95.732254
+4  20200601         2    A                     94.753224
+      month  day_type line  terminal_on_time_performance
+0  20240301         2    Q                      90.38576
+1  20200601         2    E                      90.29762
+2  20201101         2    E                      90.20619
+3  20210701         2    E                      90.15151
+4  20200801         2    E                      90.14286
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+adivisionlines =['1', '6', '7']
+bdivisionlines = ['C', 'R','W', 'L', 'G', 'M', 'F', 'JZ']
+
+adivisionlocalweekdayontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']<=75)
+]
+
+adivisionlocalweekendontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+   (ontimeperformance['terminal_on_time_performance']<=75)
+]
+adivisionweekday = adivisionlocalweekdayontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionlocalweekendontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionlocalweekdayontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']<=75)
+]
+
+bdivisionlocalweekendontimeperformance2020belowseventyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']<=75)
+]
+bdivisionweekday = bdivisionlocalweekdayontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionlocalweekendontimeperformance2020belowseventyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlinesbelowseventyfive = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlinesbelowseventyfive = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlinesbelowseventyfive = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlinesbelowseventyfive = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlinesbelowseventyfive = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlinesbelowseventyfive = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlinesbelowseventyfive = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlinesbelowseventyfive = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlinesbelowseventyfive)
+print(worstperformingweekdayAlinesbelowseventyfive)
+print(bestperformingweekdayBlinesbelowseventyfive)
+print(worstperformingweekdayBlinesbelowseventyfive)
+print (bestperformingweekendAlinesbelowseventyfive)
+print (worstperformingweekendAlinesbelowseventyfive)
+print (bestperformingweekendBlinesbelowseventyfive)
+print (worstperformingweekendBlinesbelowseventyfive)
+      month  day_type line  terminal_on_time_performance
+0  20240201         1    6                     73.975480
+1  20220101         1    6                     73.865580
+2  20231201         1    6                     72.890920
+3  20240101         1    1                     72.733855
+4  20231101         1    6                     72.482646
+      month  day_type line  terminal_on_time_performance
+0  20220101         1    6                     73.865580
+1  20231201         1    6                     72.890920
+2  20240101         1    1                     72.733855
+3  20231101         1    6                     72.482646
+4  20240301         1    6                     67.826533
+      month  day_type line  terminal_on_time_performance
+0  20220801         1    R                     74.911660
+1  20220901         1    R                     74.894760
+2  20230701         1    R                     74.814420
+3  20230401         1    F                     74.767070
+4  20221101         1    R                     74.448746
+      month  day_type line  terminal_on_time_performance
+0  20241201         1    F                      63.94558
+1  20210901         1    C                      63.42500
+2  20230901         1    F                      61.51577
+3  20240101         1    F                      60.16317
+4  20240201         1    F                      54.84243
+      month  day_type line  terminal_on_time_performance
+0  20240201         2    6                     75.000000
+1  20240601         2    6                     72.789320
+2  20220501         2    6                     71.404225
+3  20200401         2    6                     71.276593
+4  20200401         2    7                     64.496315
+      month  day_type line  terminal_on_time_performance
+0  20240601         2    6                     72.789320
+1  20220501         2    6                     71.404225
+2  20200401         2    6                     71.276593
+3  20200401         2    7                     64.496315
+4  20221201         2    6                     63.848600
+      month  day_type line  terminal_on_time_performance
+0  20240401         2    R                     74.892706
+1  20221101         2    C                     74.839740
+2  20200101         2    C                     74.535050
+3  20230501         2    C                     74.535050
+4  20210201         2    C                     73.617023
+      month  day_type line  terminal_on_time_performance
+0  20220501         2    R                     51.269317
+1  20220601         2    C                     50.537634
+2  20240201         2    C                     49.007090
+3  20240701         2    C                     47.092200
+4  20220201         2    C                     41.031745
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+adivisionlines =['1', '6', '7']
+bdivisionlines = ['C', 'R','W', 'L', 'G', 'M', 'F', 'JZ']
+
+adivisionexpressweekdayontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+
+adivisionexpressweekendontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+
+bdivisionexpressweekendontimeperformance2020seventyfivetoeighty = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=75)&
+    (ontimeperformance['terminal_on_time_performance']<=80)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020seventyfivetoeighty.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlinesseventyfivetoeighty = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlinesseventyfivetoeighty = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlinesseventyfivetoeighty = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlinesseventyfivetoeighty = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlinesseventyfivetoeighty = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlinesseventyfivetoeighty = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlinesseventyfivetoeighty = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlinesseventyfivetoeighty = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlinesseventyfivetoeighty)
+print(worstperformingweekdayAlinesseventyfivetoeighty)
+print(bestperformingweekdayBlinesseventyfivetoeighty)
+print(worstperformingweekdayBlinesseventyfivetoeighty)
+print (bestperformingweekendAlinesseventyfivetoeighty)
+print (worstperformingweekendAlinesseventyfivetoeighty)
+print (bestperformingweekendBlinesseventyfivetoeighty)
+print (worstperformingweekendBlinesseventyfivetoeighty)
+      month  day_type line  terminal_on_time_performance
+0  20220601         1    6                     79.998350
+1  20221001         1    1                     79.964870
+2  20220401         1    6                     79.660870
+3  20200201         1    6                     79.622110
+4  20220701         1    6                     79.287446
+      month  day_type line  terminal_on_time_performance
+0  20221001         1    6                     76.650137
+1  20240101         1    6                     76.424550
+2  20240501         1    6                     75.869405
+3  20231001         1    6                     75.711125
+4  20230901         1    6                     75.288665
+      month  day_type line  terminal_on_time_performance
+0  20210701         1    M                     79.975300
+1  20200301         1    G                     79.908043
+2  20220401         1    M                     79.901093
+3  20231001         1    R                     79.888440
+4  20220501         1    R                     79.820460
+      month  day_type line  terminal_on_time_performance
+0  20240501         1    R                     75.489310
+1  20220601         1    M                     75.471383
+2  20210701         1    C                     75.389755
+3  20230301         1    C                     75.347830
+4  20230501         1    C                     75.227270
+      month  day_type line  terminal_on_time_performance
+0  20230901         2    6                     79.867550
+1  20220601         2    6                     79.694325
+2  20230401         2    6                     79.113480
+3  20220401         2    6                     78.740460
+4  20230301         2    6                     78.400000
+      month  day_type line  terminal_on_time_performance
+0  20240401         2    6                     77.098040
+1  20240301         2    6                     76.389754
+2  20240501         2    6                     76.080690
+3  20240201         2    1                     75.744560
+4  20240201         2    6                     75.000000
+      month  day_type line  terminal_on_time_performance
+0  20200101         2    G                     79.982746
+1  20210901         2    F                     79.882604
+2  20200401         2    G                     79.765400
+3  20220801         2    R                     79.456020
+4  20220101         2    M                     79.329854
+      month  day_type line  terminal_on_time_performance
+0  20240801         2    F                     75.794494
+1  20241101         2    F                     75.680840
+2  20221201         2    C                     75.602030
+3  20200401         2    F                     75.598085
+4  20240701         2    F                     75.421940
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+adivisionlines =['1', '6', '7']
+bdivisionlines = ['C', 'R','W', 'L', 'G', 'M', 'F', 'JZ']
+
+adivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+
+adivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+
+bdivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=80)&
+    (ontimeperformance['terminal_on_time_performance']<=85)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlineseightytoeightyfive)
+print(worstperformingweekdayAlineseightytoeightyfive)
+print(bestperformingweekdayBlineseightytoeightyfive)
+print(worstperformingweekdayBlineseightytoeightyfive)
+print (bestperformingweekendAlineseightytoeightyfive)
+print (worstperformingweekendAlineseightytoeightyfive)
+print (bestperformingweekendBlineseightytoeightyfive)
+print (worstperformingweekendBlineseightytoeightyfive)
+      month  day_type line  terminal_on_time_performance
+0  20230101         1    1                     84.967930
+1  20220101         1    1                     84.948665
+2  20210901         1    1                     84.848154
+3  20210801         1    6                     84.843790
+4  20231101         1    1                     84.465920
+      month  day_type line  terminal_on_time_performance
+0  20240501         1    1                     80.823904
+1  20220501         1    6                     80.470490
+2  20241001         1    6                     80.359095
+3  20240201         1    1                     80.132955
+4  20211201         1    6                     80.008570
+      month  day_type line  terminal_on_time_performance
+0  20210101         1    R                     84.911660
+1  20210701         1    G                     84.880954
+2  20231201         1    G                     84.761080
+3  20210101         1    M                     84.722220
+4  20240201         1    G                     84.697570
+      month  day_type line  terminal_on_time_performance
+0  20230301         1    M                     80.425670
+1  20240501         1    M                     80.387205
+2  20201001         1    F                     80.358200
+3  20200101         1    M                     80.340910
+4  20241001         1    G                     80.022480
+      month  day_type line  terminal_on_time_performance
+0  20230101         2    6                     84.982080
+1  20241101         2    6                     84.969620
+2  20210601         2    7                     84.747547
+3  20230701         2    7                     84.238380
+4  20211001         2    6                     84.212350
+      month  day_type line  terminal_on_time_performance
+0  20211201         2    6                     80.594410
+1  20220101         2    6                     80.531913
+2  20211101         2    6                     80.497280
+3  20240101         2    6                     80.363640
+4  20210901         2    6                     80.348260
+      month  day_type line  terminal_on_time_performance
+0  20201001         2    F                     84.957630
+1  20210701         2    G                     84.845890
+2  20240301         2    R                     84.839770
+3  20200601         2    R                     84.664350
+4  20220201         2    G                     84.648186
+      month  day_type line  terminal_on_time_performance
+0  20211101         2    R                     80.803340
+1  20221101         2    R                     80.301270
+2  20231201         2    R                     80.261490
+3  20230501         2    R                     80.216384
+4  20210701         2    C                     80.025446
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+adivisionlines =['1', '6', '7']
+bdivisionlines = ['C', 'R','W', 'L', 'G', 'M', 'F', 'JZ']
+
+adivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+
+adivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+
+bdivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+     (ontimeperformance['terminal_on_time_performance']>=85)&
+    (ontimeperformance['terminal_on_time_performance']<=90)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlineseightytoeightyfive)
+print(worstperformingweekdayAlineseightytoeightyfive)
+print(bestperformingweekdayBlineseightytoeightyfive)
+print(worstperformingweekdayBlineseightytoeightyfive)
+print (bestperformingweekendAlineseightytoeightyfive)
+print (worstperformingweekendAlineseightytoeightyfive)
+print (bestperformingweekendBlineseightytoeightyfive)
+print (worstperformingweekendBlineseightytoeightyfive)
+      month  day_type line  terminal_on_time_performance
+0  20210301         1    1                     89.977750
+1  20220401         1    7                     89.816670
+2  20221001         1    7                     89.788365
+3  20200901         1    6                     89.637080
+4  20231101         1    7                     89.609910
+      month  day_type line  terminal_on_time_performance
+0  20200101         1    1                     85.607350
+1  20210901         1    6                     85.550934
+2  20210801         1    1                     85.459644
+3  20220301         1    1                     85.171497
+4  20230301         1    1                     85.071224
+      month  day_type line  terminal_on_time_performance
+0  20200601         1    R                     89.949670
+1  20230301         1    L                     89.898163
+2  20221201         1    G                     89.828200
+3  20241201         1    L                     89.790390
+4  20200601         1    F                     89.704996
+      month  day_type line  terminal_on_time_performance
+0  20210101         1    F                     85.233796
+1  20200801         1    F                     85.206020
+2  20210601         1    C                     85.053280
+3  20220101         1    M                     85.034454
+4  20231101         1    G                     85.027010
+      month  day_type line  terminal_on_time_performance
+0  20230201         2    1                     89.909300
+1  20220301         2    7                     89.787394
+2  20210701         2    7                     89.759640
+3  20230101         2    1                     89.751554
+4  20241201         2    1                     89.722220
+      month  day_type line  terminal_on_time_performance
+0  20241101         2    1                     85.383680
+1  20221001         2    7                     85.376400
+2  20240101         2    1                     85.225374
+3  20231001         2    6                     85.217726
+4  20220701         2    1                     85.102420
+      month  day_type line  terminal_on_time_performance
+0  20200601         1    R                     89.949670
+1  20230301         1    L                     89.898163
+2  20221201         1    G                     89.828200
+3  20241201         1    L                     89.790390
+4  20220601         2    M                     89.768976
+      month  day_type line  terminal_on_time_performance
+0  20210101         2    F                     85.078530
+1  20210601         1    C                     85.053280
+2  20220101         1    M                     85.034454
+3  20220901         2    R                     85.030866
+4  20231101         1    G                     85.027010
+import pandas as pd
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
+ontimeperformance['month'] = ontimeperformance['month'].astype(str)
+ontimeperformance['line'] = ontimeperformance['line'].astype(str)
+
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+adivisionlines =['1', '6', '7']
+bdivisionlines = ['C', 'R','W', 'L', 'G', 'M', 'F', 'JZ']
+
+adivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+
+adivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(adivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+adivisionweekday = adivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+adivisionweekend = adivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+bdivisionexpressweekdayontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==1) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+
+bdivisionexpressweekendontimeperformance2020eightytoeightyfive = ontimeperformance[
+    (ontimeperformance['line'].isin(bdivisionlines)) & 
+    (ontimeperformance['day_type']==2) &
+    (ontimeperformance['terminal_on_time_performance']>=90)
+]
+bdivisionweekday = bdivisionexpressweekdayontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+bdivisionweekend = bdivisionexpressweekendontimeperformance2020eightytoeightyfive.groupby(['month', 'day_type','line'])['terminal_on_time_performance'].mean().reset_index()
+
+sortedadivisionweekday = adivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekday = bdivisionweekday.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayAlineseightytoeightyfive = sortedadivisionweekday.tail(5).reset_index(drop=True)
+bestperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.head(5).reset_index(drop=True)
+worstperformingweekdayBlineseightytoeightyfive = sortedbdivisionweekday.tail(5).reset_index(drop=True)
+
+
+sortedadivisionweekend = adivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+sortedbdivisionweekend = bdivisionweekend.sort_values(by='terminal_on_time_performance', ascending=False)
+
+bestperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendAlineseightytoeightyfive = sortedadivisionweekend.tail(5).reset_index(drop=True)
+bestperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.head(5).reset_index(drop=True)
+worstperformingweekendBlineseightytoeightyfive = sortedbdivisionweekend.tail(5).reset_index(drop=True)
+
+print(bestperformingweekdayAlineseightytoeightyfive)
+print(worstperformingweekdayAlineseightytoeightyfive)
+print(bestperformingweekdayBlineseightytoeightyfive)
+print(worstperformingweekdayBlineseightytoeightyfive)
+print (bestperformingweekendAlineseightytoeightyfive)
+print (worstperformingweekendAlineseightytoeightyfive)
+print (bestperformingweekendBlineseightytoeightyfive)
+print (worstperformingweekendBlineseightytoeightyfive)
+      month  day_type line  terminal_on_time_performance
+0  20200501         1    7                     98.635477
+1  20200501         1    1                     97.209680
+2  20201001         1    7                     96.902620
+3  20200601         1    1                     96.623920
+4  20200901         1    7                     96.015320
+      month  day_type line  terminal_on_time_performance
+0  20210501         1    7                     90.392190
+1  20211101         1    7                     90.176904
+2  20210101         1    1                     90.089166
+3  20230701         1    7                     90.058434
+4  20210401         1    6                     90.012300
+      month  day_type line  terminal_on_time_performance
+0  20200501         1    L                     98.850790
+1  20200501         1    M                     97.840910
+2  20200601         1    L                     97.104300
+3  20200501         1    G                     96.331775
+4  20210401         1    L                     96.093880
+      month  day_type line  terminal_on_time_performance
+0  20220301         1    L                     90.360330
+1  20220201         1    G                     90.245730
+2  20200901         1    C                     90.105695
+3  20200801         1    R                     90.089180
+4  20240101         1    L                     90.000814
+      month  day_type line  terminal_on_time_performance
+0  20200801         2    7                     97.575057
+1  20210101         2    7                     97.438750
+2  20200701         2    1                     96.789384
+3  20200701         2    7                     96.758620
+4  20200801         2    1                     96.746576
+      month  day_type line  terminal_on_time_performance
+0  20211101         2    7                     90.446260
+1  20210301         2    1                     90.429187
+2  20231101         2    1                     90.299080
+3  20220701         2    7                     90.257350
+4  20240301         2    1                     90.150994
+      month  day_type line  terminal_on_time_performance
+0  20200301         2    L                     99.398250
+1  20201001         2    M                     99.184260
+2  20201101         2    M                     99.024390
+3  20200901         2    M                     99.023440
+4  20210101         2    M                     98.997194
+      month  day_type line  terminal_on_time_performance
+0  20210301         2    G                     90.308607
+1  20241101         2   JZ                     90.243900
+2  20201201         2    G                     90.207430
+3  20220601         2    L                     90.121824
+4  20211101         2    G                     90.014610
+import pandas as pd
+import matplotlib.pyplot as plt
+
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+shuttles = ['MS', 'BS', 'QS', 'FS', 'GS', 'H']
+independentlines = ['7', 'L', 'G']
+
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+
+service_map = {}
+for line in expresslines: service_map[line] = 'Express'
+for line in locallines: service_map[line] = 'Local'
+for line in shuttles: service_map[line] = 'Shuttle'
+for line in independentlines: service_map[line] = 'Independent'
+
+ontimeperformance['service_group'] = ontimeperformance['line'].map(service_map)
+ontimeperformance['year_extracted'] = ontimeperformance['month'].astype(str).str[:4]
+
+regularOTP_bins = [0, 75, 80, 85, 90, 101]
+regularOTP_labels = ['Below 75', '75-80', '80-85', '85-90', 'Above 90']
+
+
+highOTP_bins = [0, 90, 92, 94, 96, 98, 101]
+highOTP_labels = ['Below 90', '90-92', '92-94', '94-96', '96-98', '98-100']
+
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(14, 8))
+axes_flat = axes.flatten()
+categories = ['Independent', 'Shuttle', 'Express', 'Local']
+colors = ['Red', 'Orange', 'Yellow', 'Green', 'Purple', 'Blue']
+
+for i, s_type in enumerate(categories):
+    ax = axes_flat[i]
+    df_filtered = ontimeperformance[ontimeperformance['service_group'] == s_type].copy()
+    
+    current_bins = highOTP_bins if s_type in ['Independent', 'Shuttle'] else regularOTP_bins
+    current_labels = highOTP_labels if s_type in ['Independent', 'Shuttle'] else regularOTP_labels
+    
+    df_filtered['otp_tier'] = pd.cut(df_filtered['terminal_on_time_performance'], 
+                                     bins=current_bins, labels=current_labels)
+    
+    pivot = df_filtered.groupby(['year_extracted', 'otp_tier'], observed=False).size().unstack(fill_value=0)
+    pivot_pct = pivot.div(pivot.sum(axis=1), axis=0) * 100
+    
+    pivot_pct.plot(kind='barh', stacked=True, ax=ax, color=colors, edgecolor='black', alpha=0.8)
+    
+    ax.set_title(f'{s_type} Performance Distribution', fontsize=16, fontweight='bold')
+    ax.set_xlabel('Percent OTP per year 2020 to 2024')
+    ax.set_ylabel('Year')
+    ax.legend(title="Tiers", bbox_to_anchor=(1.02, 1), loc='upper left', fontsize='small')
+
+plt.tight_layout()
+plt.show()
+No description has been provided for this image
+import pandas as pd
+import matplotlib.pyplot as plt
+expresslines = ['2', '3', '4', '5', 'A', 'E', 'Q', 'B', 'D', 'N']
+locallines = ['1', '6', '7', 'C', 'R', 'W', 'L', 'G', 'M', 'F','JZ']
+shuttles = ['MS', 'BS', 'QS', 'FS', 'GS', 'H']
+independentlines = ['7', 'L', 'G']
+ontimeperformance = pd.read_csv('MTA_Subway_Terminal_On-Time_Performance__2020-2024_20260226.csv')
+service_map = {}
+for line in expresslines: service_map[line] = 'Express'
+for line in locallines: service_map[line] = 'Local'
+for line in shuttles: service_map[line] = 'Shuttle'
+for line in independentlines: service_map[line] = 'Independent'
+
+ontimeperformance['service_group'] = ontimeperformance['line'].map(service_map)
+
+ontimeperformance['year_extracted'] = ontimeperformance['month'].astype(str).str[:4]
+
+ontimeperformance['y_summary_label'] = (
+    ontimeperformance['year_extracted'] + " " + 
+    ontimeperformance['service_group'].astype(str)
+)
+
+bins = [0, 75, 80, 85, 90, 101]
+labels = ['Below 75', '75 to 80', '80 to 85', '85 to 90', 'Above 90']
+ontimeperformance['otp_tier'] = pd.cut(ontimeperformance['terminal_on_time_performance'], 
+                                       bins=bins, labels=labels)
+
+summary_pivot = ontimeperformance.groupby(['y_summary_label', 'otp_tier'], observed=False).size().unstack(fill_value=0)
+
+summary_pivot = summary_pivot[~summary_pivot.index.str.contains('nan')]
+
+summary_pct = summary_pivot.div(summary_pivot.sum(axis=1), axis=0) * 100
+
+custom_colors = ['Red', 'Orange', 'Yellow', 'Green', 'Purple'] 
+
+ax = summary_pct.plot(kind='barh', stacked=True, color=custom_colors, 
+                      edgecolor='black', alpha=0.85, width=0.8, figsize=(12, 7))
+
+plt.title('Subway Reliability By Tier', fontsize=18, fontweight='bold', pad=20)
+plt.xlabel('Percentage of Monthly Operations (%)', fontsize=12)
+plt.ylabel('Year & Service Category', fontsize=12)
+plt.legend(title="OTP Tiers", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+plt.tight_layout()
+plt.show()
+No description has been provided for this image
 
